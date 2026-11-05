@@ -27,6 +27,8 @@ class Article:
     snippet: str
     is_google: bool = False
     text: str = ""
+    image: str = ""
+    image_local: str = ""
     score: float = 0.0
     tags: list[str] = field(default_factory=list)
     category: str = "politics"
@@ -74,6 +76,14 @@ def parse_published(entry) -> datetime | None:
             except Exception:
                 pass
     return None
+
+
+def _feed_image(entry) -> str:
+    try:
+        from images import extract_feed_image
+        return extract_feed_image(entry)
+    except Exception:
+        return ""
 
 
 def fetch_source(src: dict, settings: dict) -> list[Article]:
@@ -128,6 +138,7 @@ def fetch_source(src: dict, settings: dict) -> list[Article]:
             published=pub,
             snippet=snippet[:1200],
             is_google=(src.get("type") == "gnews"),
+            image=_feed_image(entry),
         ))
     log.info("Fetched %d items from %s", len(articles), name)
     return articles

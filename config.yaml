@@ -18,6 +18,9 @@ settings:
   decode_google_links: true         # resolve Google News redirect -> original URL
   fetch_article_text: true          # fetch full text when publicly available
   article_text_chars: 2200          # cap per article sent to the model
+  images_enabled: true              # show article artwork in the brief
+  image_timeout: 12
+  image_max_bytes: 4000000          # skip anything larger than ~4 MB
 
 email:
   subject_prefix: "نشرة سوريا والمنطقة | Syria & Region Brief"
@@ -115,3 +118,15 @@ sources:
      url: "https://npasyria.com/en/feed/"}
   - {name: "تلفزيون سوريا", lang: ar, category: politics, type: rss, weight: 4,
      url: "https://www.syria.tv/rss.xml"}
+
+# ---- Deep dive -------------------------------------------------
+# Reply to the morning email (or use the button) to get a long-form
+# bilingual report about one article. Runs on the same free tier.
+deep_dive:
+  enabled: true
+  # Pre-filled email opened by the "Deep dive" button under each item.
+  mailto_base: "mailto:hussam.taha988@gmail.com?subject=Deep%20Dive&body="
+  actions_url: "https://github.com/hussamtaha988-SY/syria-region-brief-v2/actions/workflows/deep-dive.yml"
+  max_requests_per_run: 3           # safety cap per scheduled check
+  related_items: 4                  # extra sources gathered for context
+  report_words: 600                 # target length per language

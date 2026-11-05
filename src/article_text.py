@@ -25,6 +25,12 @@ def fetch_one(a: Article, settings: dict) -> Article:
         )
         if resp.status_code >= 400:
             return a
+        if not a.image:
+            try:
+                from images import extract_page_image
+                a.image = extract_page_image(resp.text, a.link)
+            except Exception:
+                pass
         extracted = trafilatura.extract(
             resp.text,
             include_comments=False,

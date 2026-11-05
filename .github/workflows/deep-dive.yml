@@ -1,0 +1,59 @@
+name: Deep Dive
+
+on:
+  schedule:
+    # Check the mailbox every 15 minutes, 05:00-23:00 Dubai (01:00-19:00 UTC).
+    - cron: "*/15 1-19 * * *"
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Article URL to expand (leave empty to check the mailbox)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deep-dive
+  cancel-in-progress: false
+
+jobs:
+  deep-dive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install system libraries (PDF + Arabic fonts)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 \
+            fonts-noto-core fonts-noto-extra fonts-dejavu-core
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build and send deep-dive report
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3.1-flash-lite' }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          DIGEST_TO: ${{ secrets.DIGEST_TO }}
+          REQUEST_URL: ${{ github.event.inputs.url }}
+        run: |
+          if [ -n "$REQUEST_URL" ]; then
+            python src/deepdive.py --url "$REQUEST_URL"
+          else
+            python src/deepdive.py
+          fi

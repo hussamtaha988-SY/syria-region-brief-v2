@@ -80,13 +80,30 @@ def main() -> int:
         summaries, ai_used = summarize(selected)
         items = build_items(selected, summaries)
 
+    # Email HTML keeps remote image URLs so the message stays light.
     html = render_html(items, cfg, ai_used, ROOT / "templates")
     html_path = out_dir / f"brief-{date_str}.html"
     html_path.write_text(html, encoding="utf-8")
     log.info("HTML saved: %s", html_path)
 
+    # The PDF embeds downloaded artwork so it reads well offline / in print.
+    pdf_ok = False
     pdf_path = out_dir / f"brief-{date_str}.pdf"
-    pdf_ok = render_pdf(html, pdf_path)
+    if settings.get("images_enabled", True) and selected:
+        try:
+            from images import download_for_pdf
+            download_for_pdf(selected, out_dir / "img", settings)
+            # build_items() ran before the download, so refresh the local paths.
+            local_by_id = {a.id: a.image_local for a in selected}
+            for it in items:
+                it["image_local"] = local_by_id.get(it["id"], "")
+            pdf_html = render_html(items, cfg, ai_used, ROOT / "templates", local_images=True)
+        except Exception as e:
+            log.warning("Image embedding skipped: %s", e)
+            pdf_html = html
+    else:
+        pdf_html = html
+    pdf_ok = render_pdf(pdf_html, pdf_path)
     if pdf_ok:
         log.info("PDF saved: %s", pdf_path)
 

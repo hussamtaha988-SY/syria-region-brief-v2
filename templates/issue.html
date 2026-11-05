@@ -18,14 +18,19 @@
   .source { font-size:12px; color:#5b6472; margin-bottom:6px; }
   .badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; background:#eef2f7; color:#33415c; margin-left:6px; }
   .badge.limited { background:#fff3cd; color:#7a5b00; }
+  .thumb { width:100%; max-width:340px; height:auto; border-radius:8px; margin:8px 0 10px; display:block; border:1px solid #e3e6ea; }
+  .credit { font-size:11px; color:#7b8494; margin:-4px 0 8px; }
   h2.ar { direction:rtl; text-align:right; font-size:18px; margin:6px 0; line-height:1.6; }
   h2.en { direction:ltr; text-align:left; font-size:16px; margin:6px 0; line-height:1.5; color:#243b5a; }
   p.ar { direction:rtl; text-align:right; font-size:15px; line-height:1.9; margin:8px 0; }
   p.en { direction:ltr; text-align:left; font-size:14px; line-height:1.7; margin:8px 0; color:#2a2f38; }
   .link { margin-top:10px; font-size:13px; }
   .link a { color:#0b63ce; text-decoration:none; font-weight:600; }
+  .deep { margin-top:8px; font-size:13px; }
+  .deep a { display:inline-block; background:#0f2540; color:#ffffff !important; padding:7px 14px; border-radius:6px; text-decoration:none; font-weight:600; margin-left:6px; }
+  .howto { background:#eef4ff; border:1px solid #cfe0ff; border-radius:10px; padding:14px 18px; margin-bottom:18px; font-size:13px; line-height:1.9; }
   .footer { font-size:12px; color:#6b7280; line-height:1.8; margin-top:20px; }
-  @media print { body { background:#fff; } .card { border:none; } }
+  @media print { body { background:#fff; } .card { border:none; } .deep { display:none; } }
 </style>
 </head>
 <body>
@@ -39,6 +44,13 @@
     </div>
   </div>
 
+  {% if deep_dive and deep_dive.enabled and count > 0 %}
+  <div class="howto">
+    <strong>تريد التعمّق في خبر؟</strong> اضغط زر «تعمّق» تحت الخبر وأرسل الرسالة الجاهزة، ويصلك تقرير موسّع خلال دقائق.
+    <br><span dir="ltr">Want more depth? Tap “Deep dive” under any item and send the pre-filled email.</span>
+  </div>
+  {% endif %}
+
   {% if count == 0 %}
   <div class="card">
     <p class="ar">لم يتم العثور على مواد كافية ضمن نافذة اليوم. يرجى التحقق من المصادر أو المحاولة لاحقًا.</p>
@@ -46,47 +58,44 @@
   </div>
   {% endif %}
 
-  {% if politics %}
-  <div class="card">
-    <div class="section-title">سياسة وأمن ودبلوماسية · Politics, Security &amp; Diplomacy</div>
-    {% for i in politics %}
+  {% macro render_item(i) %}
     <div class="item">
       <div class="source">{{ i.source }}{% if i.published %} · {{ i.published }}{% endif %}
         {% for t in i.tags %}<span class="badge">{{ t }}</span>{% endfor %}
         {% if i.limited %}<span class="badge limited">ملخص محدود / limited</span>{% endif %}
       </div>
+      {% if i.image_src %}
+      <img class="thumb" src="{{ i.image_src }}" alt="{{ i.title_en }}" loading="lazy">
+      <div class="credit">الصورة من المصدر / Image: {{ i.source }}</div>
+      {% endif %}
       <h2 class="ar">{{ i.title_ar }}</h2>
       <p class="ar">{{ i.summary_ar }}</p>
       <h2 class="en">{{ i.title_en }}</h2>
       <p class="en">{{ i.summary_en }}</p>
       <div class="link"><a href="{{ i.link }}" target="_blank" rel="noopener">قراءة المقال الأصلي · Read the original article</a></div>
+      {% if deep_dive and deep_dive.enabled and i.deep_mailto %}
+      <div class="deep"><a href="{{ i.deep_mailto }}">تعمّق في هذا الخبر · Deep dive</a></div>
+      {% endif %}
     </div>
-    {% endfor %}
+  {% endmacro %}
+
+  {% if politics %}
+  <div class="card">
+    <div class="section-title">سياسة وأمن ودبلوماسية · Politics, Security &amp; Diplomacy</div>
+    {% for i in politics %}{{ render_item(i) }}{% endfor %}
   </div>
   {% endif %}
 
   {% if economy %}
   <div class="card">
     <div class="section-title">اقتصاد وأعمال وطاقة · Economy, Business &amp; Energy</div>
-    {% for i in economy %}
-    <div class="item">
-      <div class="source">{{ i.source }}{% if i.published %} · {{ i.published }}{% endif %}
-        {% for t in i.tags %}<span class="badge">{{ t }}</span>{% endfor %}
-        {% if i.limited %}<span class="badge limited">ملخص محدود / limited</span>{% endif %}
-      </div>
-      <h2 class="ar">{{ i.title_ar }}</h2>
-      <p class="ar">{{ i.summary_ar }}</p>
-      <h2 class="en">{{ i.title_en }}</h2>
-      <p class="en">{{ i.summary_en }}</p>
-      <div class="link"><a href="{{ i.link }}" target="_blank" rel="noopener">قراءة المقال الأصلي · Read the original article</a></div>
-    </div>
-    {% endfor %}
+    {% for i in economy %}{{ render_item(i) }}{% endfor %}
   </div>
   {% endif %}
 
   <div class="footer">
-    <p class="ar">هذه النشرة تلخيص آلي لمواد منشورة علنًا، ولا تعيد نشر المقال كاملًا ولا تتجاوز جدران الدفع. يرجى الرجوع إلى الرابط الأصلي للتفاصيل والسياق الكامل.</p>
-    <p class="en">This brief is an automated summary of publicly available material. It does not reproduce full articles or bypass paywalls. Please use the original links for full detail and context.</p>
+    <p class="ar">هذه النشرة تلخيص آلي لمواد منشورة علنًا، ولا تعيد نشر المقال كاملًا ولا تتجاوز جدران الدفع. الصور ملك لأصحابها وتُعرض بالإشارة إلى المصدر. يرجى الرجوع إلى الرابط الأصلي للتفاصيل والسياق الكامل.</p>
+    <p class="en">This brief is an automated summary of publicly available material. It does not reproduce full articles or bypass paywalls. Images belong to their owners and are shown with source credit. Please use the original links for full detail and context.</p>
   </div>
 </div>
 </body>
