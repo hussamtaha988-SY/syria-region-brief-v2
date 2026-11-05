@@ -44,7 +44,7 @@ def send_email(subject: str, html: str, plain: str, attachments: list[Path], fro
     log.info("Email sent to %s", ", ".join(recipients))
 
 
-def plain_text(items: list[dict], date: str) -> str:
+def plain_text(items: list[dict], date: str, global_reads: list[dict] | None = None) -> str:
     lines = [f"Syria & Region Brief — {date}", ""]
     for i in items:
         lines += [
@@ -55,6 +55,12 @@ def plain_text(items: list[dict], date: str) -> str:
             i["title_ar"],
             i["summary_ar"],
             f"Link: {i['link']}",
-            "-" * 60,
         ]
+        for r in i.get("further_reading", []):
+            lines.append(f"  Long read [{r.get('label','')}] {r['title']} — {r['source']} (~{r.get('words',0)} words, {r.get('minutes',0)} min): {r['link']}")
+        lines.append("-" * 60)
+    if global_reads:
+        lines += ["", "Global long reads / قراءات موسّعة من الصحف العالمية", ""]
+        for r in global_reads:
+            lines.append(f"[{r.get('label','')}] {r['title']} — {r['source']} (~{r.get('words',0)} words, {r.get('minutes',0)} min): {r['link']}")
     return "\n".join(lines)

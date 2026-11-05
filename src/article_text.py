@@ -31,6 +31,10 @@ def fetch_one(a: Article, settings: dict) -> Article:
                 a.image = extract_page_image(resp.text, a.link)
             except Exception:
                 pass
+        from access import detect_paywall
+        paywalled, _reason = detect_paywall(resp.text)
+        if paywalled is True:
+            return a
         extracted = trafilatura.extract(
             resp.text,
             include_comments=False,

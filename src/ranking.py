@@ -38,6 +38,10 @@ CONCEPT_MAP = {
     "emirates_airline": ["emirates airline", "طيران الإمارات"],
     "houthi": ["houthi", "houthis", "الحوثي", "الحوثيون", "الحوثيين"],
     "hezbollah_denial": ["hezbollah denies", "حزب الله ينفي", "ينفي"],
+    "detention": ["detention", "detainees", "prisoners", "معتقل", "معتقلين", "سجون", "احتجاز"],
+    "sdf": ["sdf", "قسد", "syrian democratic forces", "قوات سوريا الديمقراطية"],
+    "kurdish": ["kurdish", "كردية", "كردي", "الأكراد"],
+    "heritage": ["church", "heritage", "كنيسة", "آثار", "تراث"],
 }
 GENERIC_CONCEPTS = {"syria", "region", "economic", "president", "meeting", "killed"}
 # An event is usually identified by WHO + WHERE (+ WHAT).
@@ -160,23 +164,62 @@ def dedupe(articles: list[Article]) -> list[Article]:
 def select_articles(articles: list[Article], settings: dict) -> list[Article]:
     max_items = int(settings.get("max_items", 10))
     max_per_source = int(settings.get("max_per_source", 2))
+    max_per_publisher = int(settings.get("max_per_publisher", 2))
     min_econ = int(settings.get("min_economy_items", 3))
 
     ranked = sorted(articles, key=lambda x: x.score, reverse=True)
     selected: list[Article] = []
     per_source: dict[str, int] = defaultdict(int)
+    per_publisher: dict[str, int] = defaultdict(int)
+
+    def pub_key(a: Article) -> str:
+        return a.publisher or a.source
 
     def try_add(a: Article) -> bool:
         if per_source[a.source] >= max_per_source:
             return False
+        if per_publisher[pub_key(a)] >= max_per_publisher:
+            return False
         selected.append(a)
         per_source[a.source] += 1
+        per_publisher[pub_key(a)] += 1
         return True
+
+    def remove(a: Article) -> None:
+        selected.remove(a)
+        per_source[a.source] -= 1
+        per_publisher[pub_key(a)] -= 1
 
     for a in ranked:
         if len(selected) >= max_items:
             break
         try_add(a)
+
+    # Ensure major international outlets are represented when available.
+    min_intl = int(settings.get("min_international_items", 0))
+    intl_count = sum(1 for a in selected if a.source_group == "international")
+    if intl_count < min_intl:
+        intl_pool = [a for a in ranked if a.source_group == "international" and a not in selected]
+        # Prefer one item per publisher before adding a second from the same one.
+        intl_pool.sort(key=lambda a: (per_publisher[pub_key(a)], -a.score))
+        for a in intl_pool:
+            if intl_count >= min_intl:
+                break
+            if len(selected) < max_items:
+                if try_add(a):
+                    intl_count += 1
+            else:
+                victims = sorted([x for x in selected if x.source_group != "international"],
+                                 key=lambda x: x.score)
+                if not victims:
+                    break
+                victim = victims[0]
+                remove(victim)
+                if try_add(a):
+                    intl_count += 1
+                else:
+                    # Restore if publisher/source cap prevented the swap.
+                    try_add(victim)
 
     # Ensure economy minimum if possible.
     econ_count = sum(1 for a in selected if a.category == "economy")
@@ -189,18 +232,21 @@ def select_articles(articles: list[Article], settings: dict) -> list[Article]:
                 econ_count += 1
         # If full, swap lowest-scoring politics for missing economy.
         if econ_count < min_econ and len(selected) >= max_items:
-            politics = sorted([a for a in selected if a.category != "economy"], key=lambda x: x.score)
+            intl_now = sum(1 for x in selected if x.source_group == "international")
+            politics = sorted([a for a in selected if a.category != "economy"
+                               and not (a.source_group == "international" and intl_now <= min_intl)],
+                              key=lambda x: x.score)
             for a in econ_pool:
                 if econ_count >= min_econ or not politics:
                     break
                 if per_source[a.source] >= max_per_source:
                     continue
                 victim = politics.pop(0)
-                selected.remove(victim)
-                per_source[victim.source] -= 1
-                selected.append(a)
-                per_source[a.source] += 1
-                econ_count += 1
+                remove(victim)
+                if try_add(a):
+                    econ_count += 1
+                else:
+                    try_add(victim)
 
     # Ensure a minimum of non-Syria region items if available.
     min_region = int(settings.get("min_region_items", 2))
@@ -214,17 +260,22 @@ def select_articles(articles: list[Article], settings: dict) -> list[Article]:
                 if try_add(a):
                     region_count += 1
             else:
-                syria_items = sorted([a for a in selected if "سوريا" in a.tags], key=lambda x: x.score)
+                intl_now = sum(1 for x in selected if x.source_group == "international")
+                econ_now = sum(1 for x in selected if x.category == "economy")
+                syria_items = sorted([a for a in selected if "سوريا" in a.tags
+                                      and not (a.source_group == "international" and intl_now <= min_intl)
+                                      and not (a.category == "economy" and econ_now <= min_econ)],
+                                     key=lambda x: x.score)
                 if not syria_items:
                     break
                 if per_source[a.source] >= max_per_source:
                     continue
                 victim = syria_items[0]
-                selected.remove(victim)
-                per_source[victim.source] -= 1
-                selected.append(a)
-                per_source[a.source] += 1
-                region_count += 1
+                remove(victim)
+                if try_add(a):
+                    region_count += 1
+                else:
+                    try_add(victim)
 
     selected.sort(key=lambda x: (0 if "سوريا" in x.tags else 1, x.category != "economy", -x.score))
     for i, a in enumerate(selected, 1):

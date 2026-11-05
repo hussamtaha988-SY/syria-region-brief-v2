@@ -34,7 +34,17 @@
   .more li { font-size:13px; line-height:1.8; margin-bottom:6px; }
   .more a { color:#0b63ce; text-decoration:none; font-weight:600; }
   .more .msrc { color:#5b6472; font-weight:400; }
-  .more .mlabel { display:inline-block; font-size:10px; padding:1px 7px; border-radius:999px; background:#e8eef8; color:#33415c; margin-right:4px; }
+  .more .mlabel { display:inline-block; font-size:10px; padding:1px 7px; border-radius:999px; background:#e8eef8; color:#33415c; margin-right:4px; unicode-bidi:isolate; }
+  .more .mmeta { display:block; font-size:11px; color:#5b6472; margin-top:2px; }
+  .global-reads { background:#ffffff; border:1px solid #e3e6ea; border-radius:12px; padding:22px; margin-bottom:18px; }
+  .global-reads h3 { margin:0 0 10px; font-size:18px; color:#0f2540; }
+  .global-reads ol { margin:0; padding-right:20px; padding-left:20px; }
+  .global-reads li { margin-bottom:12px; line-height:1.7; font-size:14px; }
+  .global-reads a { color:#0b63ce; text-decoration:none; font-weight:700; }
+  .global-reads .gmeta { display:block; font-size:12px; color:#5b6472; margin-top:2px; }
+  .global-reads .mlabel { display:inline-block; font-size:10px; padding:1px 7px; border-radius:999px; background:#e8eef8; color:#33415c; margin-right:4px; unicode-bidi:isolate; }
+  .mmeta, .gmeta { unicode-bidi:isolate; }
+  .empty-note { font-size:12px; color:#6b7280; margin-top:8px; direction:rtl; text-align:right; }
   .howto { background:#eef4ff; border:1px solid #cfe0ff; border-radius:10px; padding:14px 18px; margin-bottom:18px; font-size:13px; line-height:1.9; }
   .footer { font-size:12px; color:#6b7280; line-height:1.8; margin-top:20px; }
   @media print { body { background:#fff; } .card { border:none; } .deep { display:none; } }
@@ -45,7 +55,7 @@
   <div class="masthead">
     <h1>نشرة سوريا والمنطقة</h1>
     <div class="en">Syria &amp; Region Daily Brief</div>
-    <div class="meta">{{ date }} · {{ generated }} · {{ count }} مادة</div>
+    <div class="meta">{{ date }} · {{ generated }} · {{ count }} مادة{% if international_count %} · {{ international_count }} من الصحف/وكالات العالمية{% endif %}</div>
     <div class="meta">
       {% if ai_used %}تم التلخيص آليًا مع رابط المصدر لكل مادة.{% else %}وضع الاحتياط: بعض الملخصات محدودة لأن خدمة التلخيص المجانية غير متاحة.{% endif %}
     </div>
@@ -53,8 +63,8 @@
 
   {% if count > 0 %}
   <div class="howto">
-    <strong>للتوسّع:</strong> تحت كل خبر تجد قائمة «قراءات إضافية معمّقة» — مقالات وتحليلات مجانية من مصادر أخرى عن الموضوع نفسه، مع رابط مباشر لكل منها.
-    <br><span dir="ltr">Below each item: free in-depth articles and analysis about the same story, from other outlets.</span>
+    <strong>للتوسّع:</strong> تحت الأخبار التي تتوفر لها قراءات مرتبطة، وفي قسم مستقل أدناه، روابط لمقالات موسّعة مجانية تم التحقق من نصها العلني وطوله. يظهر عدد الكلمات ووقت القراءة التقريبي بجانب كل رابط.
+    <br><span dir="ltr">Verified free long reads: actual article length and public access are checked before a link is shown. Target is up to 5 per story; fewer is shown rather than filling the list with short reports.</span>
   </div>
   {% endif %}
 
@@ -89,6 +99,7 @@
             <span class="mlabel">{{ r.label }}</span>
             <a href="{{ r.link }}" target="_blank" rel="noopener">{{ r.title }}</a>
             <span class="msrc"> — {{ r.source }}</span>
+            <span class="mmeta" dir="{% if r.lang == 'ar' %}rtl{% else %}ltr{% endif %}">{% if r.lang == 'ar' %}~{{ r.words }} كلمة · {{ r.minutes }} دقائق قراءة{% else %}~{{ r.words }} words · {{ r.minutes }} min read{% endif %}{% if r.date %} · {{ r.date }}{% endif %}</span>
           </li>
           {% endfor %}
         </ol>
@@ -111,9 +122,24 @@
   </div>
   {% endif %}
 
+  {% if global_reads %}
+  <div class="global-reads">
+    <h3>قراءات موسّعة مجانية من مصادر عالمية · Verified free long reads</h3>
+    <ol>
+      {% for r in global_reads %}
+      <li{% if r.lang == 'ar' %} dir="rtl"{% else %} dir="ltr"{% endif %}>
+        <span class="mlabel">{{ r.label }}</span>
+        <a href="{{ r.link }}" target="_blank" rel="noopener">{{ r.title }}</a>
+        <span class="gmeta" dir="{% if r.lang == 'ar' %}rtl{% else %}ltr{% endif %}">{{ r.source }} · {% if r.lang == 'ar' %}~{{ r.words }} كلمة · {{ r.minutes }} دقائق قراءة{% else %}~{{ r.words }} words · {{ r.minutes }} min read{% endif %}{% if r.date %} · {{ r.date }}{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+  {% endif %}
+
   <div class="footer">
-    <p class="ar">هذه النشرة تلخيص آلي لمواد منشورة علنًا، ولا تعيد نشر المقال كاملًا ولا تتجاوز جدران الدفع. الصور ملك لأصحابها وتُعرض بالإشارة إلى المصدر. يرجى الرجوع إلى الرابط الأصلي للتفاصيل والسياق الكامل.</p>
-    <p class="en">This brief is an automated summary of publicly available material. It does not reproduce full articles or bypass paywalls. Images belong to their owners and are shown with source credit. Please use the original links for full detail and context.</p>
+    <p class="ar">هذه النشرة تلخيص آلي لمواد منشورة علنًا، ولا تعيد نشر المقال كاملًا ولا تتجاوز جدران الدفع. القراءات الموسّعة لا تُدرج إلا بعد التحقق من نص علني كافٍ وعدم وجود جدار اشتراك؛ لذلك قد يقل عددها عن الهدف. بعض الصحف العالمية قد لا تظهر إذا تعذر التحقق من المقال أو كان مدفوعًا. الصور ملك لأصحابها وتُعرض بالإشارة إلى المصدر.</p>
+    <p class="en">This brief is an automated summary of publicly available material. It does not reproduce full articles or bypass paywalls. Long reads are included only after public text and length are verified and no subscription wall is detected; counts may therefore be below target. Some international outlets may be absent when verification fails or an article is paid. Images belong to their owners and are shown with source credit.</p>
   </div>
 </div>
 </body>

@@ -20,6 +20,8 @@ def build_items(articles: list[Article], summaries: dict[str, dict]) -> list[dic
             "id": a.id,
             "source": a.source,
             "source_lang": a.source_lang,
+            "source_group": a.source_group,
+            "publisher": a.publisher,
             "link": a.link,
             "image": a.image,
             "image_local": a.image_local,
@@ -36,7 +38,8 @@ def build_items(articles: list[Article], summaries: dict[str, dict]) -> list[dic
     return items
 
 
-def render_html(items: list[dict], cfg: dict, ai_used: bool, template_dir: str | Path, local_images: bool = False) -> str:
+def render_html(items: list[dict], cfg: dict, ai_used: bool, template_dir: str | Path,
+                local_images: bool = False, global_reads: list[dict] | None = None) -> str:
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
         autoescape=select_autoescape(["html", "xml"]),
@@ -53,6 +56,7 @@ def render_html(items: list[dict], cfg: dict, ai_used: bool, template_dir: str |
             f"DEEPDIVE {i['link']}", safe=""
         ) if deep.get("mailto_base") else ""
         i["deep_action"] = deep.get("actions_url", "")
+    international_count = sum(1 for i in items if i.get("source_group") == "international")
     politics = [i for i in items if i["category"] != "economy"]
     economy = [i for i in items if i["category"] == "economy"]
     return template.render(
@@ -65,6 +69,8 @@ def render_html(items: list[dict], cfg: dict, ai_used: bool, template_dir: str |
         ai_used=ai_used,
         subject_prefix=cfg.get("email", {}).get("subject_prefix", "Syria & Region Brief"),
         deep_dive=deep,
+        global_reads=global_reads or [],
+        international_count=international_count,
     )
 
 

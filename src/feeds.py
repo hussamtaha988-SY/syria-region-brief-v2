@@ -29,6 +29,8 @@ class Article:
     text: str = ""
     image: str = ""
     image_local: str = ""
+    publisher: str = ""
+    source_group: str = "regional"
     further_reading: list = field(default_factory=list)
     score: float = 0.0
     tags: list[str] = field(default_factory=list)
@@ -107,6 +109,11 @@ def fetch_source(src: dict, settings: dict) -> list[Article]:
         link = entry.get("link", "")
         if not title or not link:
             continue
+        path_lower = urlparse(link).path.lower()
+        if any(part in path_lower for part in ("/hub/", "/topics/", "/topic/", "/tag/", "/author/", "/section/")):
+            continue
+        if re.search(r"(latest news|news \||\| latest|middle east news)", title, flags=re.I):
+            continue
         # Google News titles usually end with " - Publisher Name".
         if src.get("type") == "gnews":
             publisher = ""
@@ -134,6 +141,8 @@ def fetch_source(src: dict, settings: dict) -> list[Article]:
             source_lang=src.get("lang", "en"),
             source_category=src.get("category", "politics"),
             source_weight=int(src.get("weight", 3)),
+            publisher=src.get("publisher", ""),
+            source_group=src.get("group", "regional"),
             title=title,
             link=link,
             published=pub,

@@ -68,24 +68,27 @@ def main() -> int:
         log.error("No relevant articles found. Check feeds/keywords or try again later.")
         # Still produce a minimal issue so the user knows the run happened.
         items = []
+        global_reads = []
         ai_used = False
     else:
+        global_reads = []
         if settings.get("decode_google_links", True):
             log.info("Resolving Google News links…")
             decode_google_links(selected)
         log.info("Fetching public article text…")
         fetch_texts(selected, settings)
+        global_reads = []
         if settings.get("further_reading_enabled", True):
-            log.info("Finding free in-depth further reading…")
+            log.info("Finding verified free long reads from international publishers…")
             from further_reading import attach as attach_further
-            attach_further(selected, settings, int(settings.get("further_reading_per_item", 3)))
+            global_reads = attach_further(selected, settings, int(settings.get("further_reading_per_item", 5)))
         log.info("Summarizing…")
         from summarize import summarize
         summaries, ai_used = summarize(selected)
         items = build_items(selected, summaries)
 
     # Email HTML keeps remote image URLs so the message stays light.
-    html = render_html(items, cfg, ai_used, ROOT / "templates")
+    html = render_html(items, cfg, ai_used, ROOT / "templates", global_reads=global_reads)
     html_path = out_dir / f"brief-{date_str}.html"
     html_path.write_text(html, encoding="utf-8")
     log.info("HTML saved: %s", html_path)
@@ -101,7 +104,7 @@ def main() -> int:
             local_by_id = {a.id: a.image_local for a in selected}
             for it in items:
                 it["image_local"] = local_by_id.get(it["id"], "")
-            pdf_html = render_html(items, cfg, ai_used, ROOT / "templates", local_images=True)
+            pdf_html = render_html(items, cfg, ai_used, ROOT / "templates", local_images=True, global_reads=global_reads)
         except Exception as e:
             log.warning("Image embedding skipped: %s", e)
             pdf_html = html
@@ -116,6 +119,8 @@ def main() -> int:
         "date": date_str,
         "ai_used": ai_used,
         "count": len(items),
+        "international_count": sum(1 for a in selected if a.source_group == "international"),
+        "global_long_reads": global_reads,
         "items": items,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -136,7 +141,7 @@ def main() -> int:
         send_email(
             subject=subject,
             html=email_html,
-            plain=plain_text(items, date_str),
+            plain=plain_text(items, date_str, global_reads=global_reads),
             attachments=attachments,
             from_name=cfg["email"].get("from_name", "Syria & Region Brief"),
         )

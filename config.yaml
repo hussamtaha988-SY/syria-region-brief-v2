@@ -11,6 +11,8 @@ settings:
   max_items: 10                     # target items per issue (8–12 recommended)
   min_items: 5
   max_per_source: 2                 # avoid one outlet dominating
+  max_per_publisher: 2              # e.g. Guardian ME + Guardian Business count together
+  min_international_items: 4        # reserve slots for major international outlets when available
   min_economy_items: 3              # try to include at least this many economy items
   min_region_items: 2               # try to include at least this many non-Syria region items
   request_timeout: 20
@@ -19,7 +21,18 @@ settings:
   fetch_article_text: true          # fetch full text when publicly available
   article_text_chars: 2200          # cap per article sent to the model
   further_reading_enabled: true     # under each item: more FREE in-depth articles
-  further_reading_per_item: 5       # how many extra reads per item
+  further_reading_per_item: 5       # target, not a quota: only verified long reads
+  long_read_min_words_en: 800       # actual article words, not teaser/snippet
+  long_read_min_words_ar: 600
+  long_read_min_minutes: 4
+  long_read_lookback_days: 90
+  global_long_reads: 8              # separate section from major international outlets
+  long_read_max_candidates: 120
+  long_read_verify_limit: 90
+  long_read_candidates_per_publisher: 6
+  long_read_workers: 6
+  long_read_fetch_timeout: 12
+  long_read_match_threshold: 6
   images_enabled: true              # show article artwork in the brief
   image_timeout: 12
   image_max_bytes: 4000000          # skip anything larger than ~4 MB
@@ -64,37 +77,47 @@ keywords:
 # weight: higher = preferred when deduplicating / ranking
 sources:
   # --- English / international ---
-  - {name: "BBC Middle East", lang: en, category: politics, type: rss, weight: 5,
+  - {name: "BBC Middle East", lang: en, category: politics, type: rss, weight: 5, publisher: bbc, group: international,
      url: "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml"}
-  - {name: "The Guardian — Middle East", lang: en, category: politics, type: rss, weight: 5,
+  - {name: "The Guardian — Middle East", lang: en, category: politics, type: rss, weight: 5, publisher: guardian, group: international,
      url: "https://www.theguardian.com/world/middleeast/rss"}
-  - {name: "Al Jazeera English", lang: en, category: politics, type: rss, weight: 5,
+  - {name: "Al Jazeera English", lang: en, category: politics, type: rss, weight: 5, publisher: aljazeera, group: international,
      url: "https://www.aljazeera.com/xml/rss/all.xml"}
   - {name: "Middle East Eye", lang: en, category: politics, type: rss, weight: 4,
      url: "https://www.middleeasteye.net/rss.xml"}
   - {name: "Arab News", lang: en, category: politics, type: rss, weight: 4,
      url: "https://www.arabnews.com/rss.xml"}
-  - {name: "Reuters", lang: en, category: politics, type: gnews, weight: 6,
+  - {name: "Reuters", lang: en, category: politics, type: gnews, weight: 6, publisher: reuters, group: international,
      query: 'site:reuters.com (Syria OR "Middle East" OR Lebanon OR Iraq OR Iran OR Israel OR Turkey OR Gulf) when:1d',
      hl: en-US, gl: US, ceid: "US:en"}
-  - {name: "Associated Press", lang: en, category: politics, type: gnews, weight: 6,
+  - {name: "Associated Press", lang: en, category: politics, type: gnews, weight: 6, publisher: ap, group: international,
      query: 'site:apnews.com (Syria OR "Middle East" OR Lebanon OR Iraq OR Iran OR Israel OR Turkey) when:1d',
      hl: en-US, gl: US, ceid: "US:en"}
   - {name: "The New Arab", lang: en, category: politics, type: gnews, weight: 3,
      query: 'site:newarab.com when:1d', hl: en-US, gl: US, ceid: "US:en"}
+  - {name: "The Independent", lang: en, category: politics, type: gnews, weight: 4, publisher: independent, group: international,
+     query: 'site:independent.co.uk (Syria OR "Middle East" OR Lebanon OR Iraq OR Iran OR Israel OR Turkey OR Gulf) when:1d',
+     hl: en-US, gl: US, ceid: "US:en"}
+  - {name: "The Jerusalem Post", lang: en, category: politics, type: rss, weight: 4, publisher: jpost, group: international,
+     url: "https://www.jpost.com/rss/rssfeedsmiddleeastnews.aspx"}
+  - {name: "Le Monde — English", lang: en, category: politics, type: rss, weight: 4, publisher: lemonde, group: international,
+     url: "https://www.lemonde.fr/en/middle-east/rss_full.xml"}
   - {name: "Anadolu — English", lang: en, category: politics, type: gnews, weight: 3,
      query: 'site:aa.com.tr/en (Syria OR "Middle East") when:1d', hl: en-US, gl: US, ceid: "US:en"}
 
   # --- English / economy ---
-  - {name: "BBC Business", lang: en, category: economy, type: rss, weight: 4,
+  - {name: "BBC Business", lang: en, category: economy, type: rss, weight: 4, publisher: bbc, group: international,
      url: "https://feeds.bbci.co.uk/news/business/rss.xml"}
-  - {name: "The Guardian — Business", lang: en, category: economy, type: rss, weight: 4,
+  - {name: "The Guardian — Business", lang: en, category: economy, type: rss, weight: 4, publisher: guardian, group: international,
      url: "https://www.theguardian.com/business/rss"}
+  - {name: "CNBC", lang: en, category: economy, type: gnews, weight: 4, publisher: cnbc, group: international,
+     query: 'site:cnbc.com (Syria OR "Middle East" OR Iran OR Israel OR Saudi OR Gulf OR OPEC OR oil OR energy) when:1d',
+     hl: en-US, gl: US, ceid: "US:en"}
 
   # --- Arabic / general ---
   - {name: "BBC عربي", lang: ar, category: politics, type: rss, weight: 5,
      url: "https://feeds.bbci.co.uk/arabic/rss.xml"}
-  - {name: "الجزيرة", lang: ar, category: politics, type: rss, weight: 5,
+  - {name: "الجزيرة", lang: ar, category: politics, type: rss, weight: 5, publisher: aljazeera, group: international,
      url: "https://www.aljazeera.net/rss"}
   - {name: "الشرق الأوسط", lang: ar, category: politics, type: rss, weight: 5,
      url: "https://aawsat.com/feed"}
@@ -104,7 +127,7 @@ sources:
      query: 'site:aa.com.tr/ar when:1d', hl: ar, gl: AE, ceid: "AE:ar"}
 
   # --- Arabic / economy ---
-  - {name: "CNBC عربية", lang: ar, category: economy, type: gnews, weight: 5,
+  - {name: "CNBC عربية", lang: ar, category: economy, type: gnews, weight: 5, publisher: cnbc, group: international,
      query: 'site:cnbcarabia.com when:1d', hl: ar, gl: AE, ceid: "AE:ar"}
   - {name: "الشرق للأعمال", lang: ar, category: economy, type: gnews, weight: 5,
      query: 'site:asharqbusiness.com when:1d', hl: ar, gl: AE, ceid: "AE:ar"}
