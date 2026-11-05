@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   brief:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
       - name: Checkout
@@ -35,11 +35,19 @@ jobs:
           cache: pip
 
       - name: Install system libraries (PDF + Arabic fonts)
+        timeout-minutes: 8
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update
+          sudo apt-get update \
+            -o Acquire::Retries=3 \
+            -o Acquire::http::Timeout=30 \
+            -o Acquire::https::Timeout=30
           sudo apt-get install -y --no-install-recommends \
+            -o Acquire::Retries=3 \
             libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 \
-            fonts-noto-core fonts-noto-extra fonts-dejavu-core
+            fonts-noto-core fonts-dejavu-core
+          fc-cache -f >/dev/null 2>&1 || true
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
