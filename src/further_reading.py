@@ -172,7 +172,7 @@ def _query_gnews(query: str, settings: dict, hl="en-US", gl="US", ceid="US:en") 
         log.debug("Further-reading query failed (%s): %s", query[:50], e)
         return []
     out = []
-    for e in parsed.entries[:25]:
+    for e in parsed.entries[:40]:
         link = e.get("link", "")
         title = clean_html(e.get("title", ""))
         if not link or not title:
@@ -214,11 +214,15 @@ def find_for_article(article: Article, settings: dict, count: int = 3,
     queries.append((f"{topic} (analysis OR explainer OR background OR \"what next\") when:90d",
                     "en-US", "US", "US:en", 4))
     # 2) Broader recent coverage of the same event.
-    queries.append((f"{' '.join(words[:7])} when:7d", "en-US", "US", "US:en", 2))
+    queries.append((f"{' '.join(words[:7])} when:14d", "en-US", "US", "US:en", 2))
+    queries.append((f"{' '.join(words[:4])} (report OR investigation OR profile OR explained) when:60d",
+                    "en-US", "US", "US:en", 2))
     # 3) Arabic coverage.
     ar_words = [w for w in words if re.search(r"[\u0600-\u06FF]", w)]
     if ar_words:
-        queries.append((f"{' '.join(ar_words[:6])} when:14d", "ar", "AE", "AE:ar", 2))
+        queries.append((f"{' '.join(ar_words[:6])} when:21d", "ar", "AE", "AE:ar", 2))
+        queries.append((f"{' '.join(ar_words[:4])} (تحليل OR تقرير OR قراءة) when:60d",
+                        "ar", "AE", "AE:ar", 3))
     else:
         queries.append((f"{' '.join(words[:5])} سوريا when:14d", "ar", "AE", "AE:ar", 1))
 
@@ -250,11 +254,13 @@ def find_for_article(article: Article, settings: dict, count: int = 3,
             c["_sim"] = sim
             candidates.append(c)
 
-    if not candidates:
-        # Looser second pass: fewer keywords, still must be regional and free.
+    if len(candidates) < count * 2:
+        # Looser top-up passes: fewer keywords, still regional and free.
         for q, hl, gl, ceid in (
-            (f"{' '.join(words[:3])} when:30d", "en-US", "US", "US:en"),
-            (f"{' '.join(words[:3])} سوريا when:30d", "ar", "AE", "AE:ar"),
+            (f"{' '.join(words[:3])} when:45d", "en-US", "US", "US:en"),
+            (f"{' '.join(words[:2])} Syria when:60d", "en-US", "US", "US:en"),
+            (f"{' '.join(words[:3])} سوريا when:45d", "ar", "AE", "AE:ar"),
+            (f"{' '.join(words[:2])} سوريا تحليل when:90d", "ar", "AE", "AE:ar"),
         ):
             for c in _query_gnews(q, settings, hl, gl, ceid):
                 curl = canonical_url(c["link"])
@@ -269,7 +275,7 @@ def find_for_article(article: Article, settings: dict, count: int = 3,
                 candidates.append(c)
                 if len(candidates) >= count * 3:
                     break
-            if candidates:
+            if len(candidates) >= count * 2:
                 break
 
     if not candidates:
@@ -277,7 +283,7 @@ def find_for_article(article: Article, settings: dict, count: int = 3,
 
     # Resolve Google redirects so the reader sees the real publisher URL.
     candidates.sort(key=lambda x: x["_score"], reverse=True)
-    candidates = candidates[: max(count * 3, 8)]
+    candidates = candidates[: max(count * 4, 12)]
     google_ones = [c for c in candidates if c["is_google"]]
     if google_ones and settings.get("decode_google_links", True):
         holders = [

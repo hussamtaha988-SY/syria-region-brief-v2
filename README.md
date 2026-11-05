@@ -258,7 +258,7 @@ python src/main.py
 ```yaml
 settings:
   further_reading_enabled: true
-  further_reading_per_item: 3
+  further_reading_per_item: 5
 ```
 
 ### تقرير Gemini المعمّق (اختياري، يدوي)

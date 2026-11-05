@@ -19,7 +19,7 @@ settings:
   fetch_article_text: true          # fetch full text when publicly available
   article_text_chars: 2200          # cap per article sent to the model
   further_reading_enabled: true     # under each item: more FREE in-depth articles
-  further_reading_per_item: 3       # how many extra reads per item
+  further_reading_per_item: 5       # how many extra reads per item
   images_enabled: true              # show article artwork in the brief
   image_timeout: 12
   image_max_bytes: 4000000          # skip anything larger than ~4 MB
