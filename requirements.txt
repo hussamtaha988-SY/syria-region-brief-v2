@@ -1,0 +1,10 @@
+requests>=2.31
+feedparser>=6.0
+python-dateutil>=2.8
+PyYAML>=6.0
+Jinja2>=3.1
+trafilatura>=1.8
+weasyprint>=62.0
+googlenewsdecoder>=0.1
+python-dotenv>=1.0
+premailer>=3.10

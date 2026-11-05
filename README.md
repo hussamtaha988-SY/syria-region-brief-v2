@@ -1,0 +1,228 @@
+# نشرة سوريا والمنطقة اليومية | Syria & Region Daily Brief
+
+أداة مجانية التشغيل تُنشئ نشرة يومية ثنائية اللغة (عربي/إنجليزي) عن سوريا والمنطقة، من مصادر إخبارية وسياسية واقتصادية، مع رابط المقال الأصلي أسفل كل مادة، ثم ترسلها بالبريد مع ملف HTML و PDF.
+
+A zero-running-cost daily bilingual brief about Syria and the region, with original article links, delivered by email with HTML + PDF attachments.
+
+---
+
+## 1) ما الذي تفعله الأداة؟
+
+1. تجمع الأخبار من RSS مباشر، ومن Google News RSS للمصادر التي تحجب RSS.
+2. تُرشّح الأخبار حسب سوريا/المنطقة/الاقتصاد خلال آخر ~30 ساعة.
+3. تُزيل التكرار وتحاول تنويع المصادر والأقسام.
+4. تُلخّص المواد عبر Gemini API بالمستوى المجاني.
+5. تُنتج:
+   - `brief-YYYY-MM-DD.html`
+   - `brief-YYYY-MM-DD.pdf`
+   - `brief-YYYY-MM-DD.json`
+6. ترسل النشرة إلى بريدك عبر Gmail SMTP.
+
+> إذا لم تتوفر خدمة التلخيص المجانية في يوم ما، ترسل الأداة نسخة احتياطية محدودة وتُعلّم المواد بوضوح، ولا تنتقل إلى أي وضع مدفوع.
+
+---
+
+## 2) البنية المجانية
+
+| الجزء | الخدمة |
+|---|---|
+| الجدولة والتشغيل | GitHub Actions في مستودع عام |
+| التلخيص | Gemini API Free Tier |
+| البريد | Gmail SMTP + App Password |
+| PDF | WeasyPrint + خطوط مفتوحة |
+| الأخبار | RSS / Google News RSS |
+
+**مهم:** لا تُفعّل الفوترة في Google AI Studio أو GitHub. هذه الأداة مصممة لتبقى ضمن الاستخدام المجاني.
+
+---
+
+## 3) الملفات
+
+```text
+syria-region-brief/
+├─ .github/workflows/daily.yml   # التشغيل اليومي 07:00 بتوقيت دبي
+├─ config.yaml                   # المصادر والكلمات المفتاحية والإعدادات
+├─ requirements.txt
+├─ src/
+│  ├─ main.py
+│  ├─ feeds.py
+│  ├─ ranking.py
+│  ├─ article_text.py
+│  ├─ summarize.py
+│  ├─ render.py
+│  ├─ mailer.py
+│  └─ utils.py
+├─ templates/issue.html
+└─ .env.example                  # مثال محلي فقط؛ لا تضع أسرارك هنا عند الرفع
+```
+
+---
+
+## 4) الإعداد على GitHub خلال خطوات
+
+### الخطوة 1: أنشئ مستودعًا عامًا
+
+1. افتح GitHub وأنشئ مستودعًا جديدًا باسم مثل:
+   `syria-region-brief`
+2. اجعله **Public** حتى يكون تشغيل GitHub Actions القياسي مجانيًا.
+3. ارفع ملفات المشروع كما هي، بما فيها مجلد `.github`.
+
+> لا ترفع ملف `.env` حقيقيًا. استخدم GitHub Secrets فقط.
+
+### الخطوة 2: أنشئ مفتاح Gemini مجانيًا
+
+1. افتح Google AI Studio.
+2. أنشئ API Key.
+3. تأكد من عدم ربط مشروعك بفوترة مدفوعة.
+4. احتفظ بالمفتاح لاستخدامه كـ Secret.
+
+### الخطوة 3: جهّز Gmail للإرسال
+
+1. فعّل التحقق بخطوتين في حساب Gmail الذي سيرسل النشرة.
+2. أنشئ **App Password** من إعدادات أمان Google.
+3. ستحصل على كلمة مرور تطبيق من 16 حرفًا.
+
+> لا تستخدم كلمة مرور Gmail العادية، ولا تضعها في الكود.
+
+### الخطوة 4: أضف Secrets في GitHub
+
+من المستودع:
+
+`Settings → Secrets and variables → Actions → New repository secret`
+
+أضف:
+
+| الاسم | القيمة |
+|---|---|
+| `GEMINI_API_KEY` | مفتاح Gemini من AI Studio |
+| `GMAIL_USER` | بريد Gmail الذي سيرسل النشرة |
+| `GMAIL_APP_PASSWORD` | كلمة مرور التطبيق المكونة من 16 حرفًا |
+| `DIGEST_TO` | البريد الذي يستلم النشرة، ويمكن وضع أكثر من بريد بفواصل |
+
+اختياري:
+
+| الاسم | القيمة |
+|---|---|
+| `GEMINI_MODEL` | متغير Repository variable، مثل `gemini-2.5-flash` |
+
+### الخطوة 5: شغّل اختبارًا يدويًا
+
+1. افتح تبويب `Actions`.
+2. اختر workflow باسم `Daily Syria & Region Brief`.
+3. اضغط `Run workflow`.
+4. جرّب أولًا مع `dry_run = true` للتأكد من التوليد بدون إرسال.
+5. بعد النجاح، شغّله مع `dry_run = false` لإرسال بريد حقيقي.
+
+### الخطوة 6: التشغيل اليومي
+
+الworkflow مضبوط على:
+
+```cron
+0 3 * * *
+```
+
+أي 03:00 UTC = 07:00 صباحًا بتوقيت دبي.
+
+> قد يتأخر GitHub Actions أحيانًا عدة دقائق، وهذا سلوك طبيعي في الجدولة المجانية.
+
+---
+
+## 5) التشغيل المحلي للاختبار
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # على ويندوز: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+# عدّل .env محليًا فقط
+python src/main.py --dry-run --no-ai
+```
+
+لتوليد نسخة مع التلخيص:
+
+```bash
+python src/main.py --dry-run
+```
+
+لإرسال بريد حقيقي من جهازك:
+
+```bash
+python src/main.py
+```
+
+---
+
+## 6) تخصيص المصادر
+
+عدّل `config.yaml`.
+
+مثال مصدر RSS مباشر:
+
+```yaml
+- name: "BBC Middle East"
+  lang: en
+  category: politics
+  type: rss
+  weight: 5
+  url: "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml"
+```
+
+مثال مصدر عبر Google News RSS:
+
+```yaml
+- name: "Reuters"
+  lang: en
+  category: politics
+  type: gnews
+  weight: 6
+  query: 'site:reuters.com (Syria OR "Middle East") when:1d'
+  hl: en-US
+  gl: US
+  ceid: "US:en"
+```
+
+يمكنك أيضًا تعديل:
+
+- `max_items`: عدد المواد.
+- `max_per_source`: حد المواد من المصدر الواحد.
+- `min_economy_items`: حد أدنى لمواد الاقتصاد.
+- `min_region_items`: حد أدنى لأخبار المنطقة غير سوريا.
+- `keywords`: كلمات سوريا/المنطقة/الاقتصاد.
+
+---
+
+## 7) الخصوصية والأمان
+
+- المستودع العام يحتوي الكود فقط.
+- المفاتيح وكلمات المرور تُخزن في GitHub Secrets.
+- لا يتم تضمين بريدك أو مفاتيحك داخل ملفات الكود.
+- ملفات النشرة اليومية لا تُرفع تلقائيًا إلى المستودع.
+- خيار رفع artifacts معطّل افتراضيًا؛ في المستودع العام قد تكون artifacts قابلة للتنزيل من الآخرين.
+
+---
+
+## 8) القيود المهمة
+
+- بعض الصحف تفرض جدار دفع؛ الأداة تلخص المتاح علنًا فقط ولا تتجاوز الحماية.
+- قد تتغير حدود Gemini المجانية أو نماذجه؛ عندها يمكن تغيير `GEMINI_MODEL` أو استخدام وضع الاحتياط.
+- قد تتأخر جدولة GitHub Actions أو تتوقف إذا ظل المستودع غير نشط لفترة طويلة؛ شغّل workflow يدويًا أو أعد تفعيله عند الحاجة.
+- التلخيص الآلي قد يخطئ؛ الرابط الأصلي موجود دائمًا للمراجعة.
+
+---
+
+## 9) استكشاف الأخطاء
+
+| المشكلة | الحل |
+|---|---|
+| لا يصل البريد | تأكد من `GMAIL_USER` و `GMAIL_APP_PASSWORD` و `DIGEST_TO`، ومن أن التحقق بخطوتين مفعّل |
+| رسالة limited بكثرة | يعني أن Gemini غير متاح أو النص المستخرج قصير؛ جرّب نموذجًا آخر أو شغّل لاحقًا |
+| PDF لا يظهر العربية جيدًا | تأكد من تثبيت `fonts-noto-core` في workflow |
+| مصدر لا يعمل | احذفه أو استبدله بمصدر `gnews` في `config.yaml` |
+| فشل Gemini 429 | هذا حد مجاني/مؤقت؛ الأداة ستستخدم الاحتياط أو جرّب لاحقًا |
+| فشل SMTP | تأكد أنك تستخدم App Password وليس كلمة مرور الحساب العادية |
+
+---
+
+## 10) ملاحظة تحريرية
+
+هذه النشرة ملخص آلي لمواد منشورة علنًا، وليست إعادة نشر للمقالات كاملة. يجب الرجوع إلى المصدر الأصلي للتفاصيل والسياق الكامل.

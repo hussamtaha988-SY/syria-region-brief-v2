@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ subject_prefix }} — {{ date }}</title>
+<style>
+  body { margin:0; padding:0; background:#f4f5f7; font-family: "Noto Sans Arabic","Noto Naskh Arabic","DejaVu Sans",Arial,Tahoma,sans-serif; color:#1a1d23; }
+  .wrap { max-width:820px; margin:0 auto; padding:24px 16px; }
+  .card { background:#ffffff; border:1px solid #e3e6ea; border-radius:12px; padding:22px; margin-bottom:18px; }
+  .masthead { background:#0f2540; color:#fff; border-radius:12px; padding:26px 22px; margin-bottom:18px; }
+  .masthead h1 { margin:0 0 6px; font-size:24px; line-height:1.4; }
+  .masthead .en { font-size:15px; opacity:.9; direction:ltr; text-align:left; }
+  .meta { font-size:13px; opacity:.85; margin-top:10px; }
+  .section-title { font-size:18px; margin:26px 0 12px; padding-bottom:6px; border-bottom:2px solid #0f2540; }
+  .item { border-top:1px solid #edf0f3; padding-top:16px; margin-top:16px; }
+  .item:first-child { border-top:none; padding-top:0; margin-top:0; }
+  .source { font-size:12px; color:#5b6472; margin-bottom:6px; }
+  .badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; background:#eef2f7; color:#33415c; margin-left:6px; }
+  .badge.limited { background:#fff3cd; color:#7a5b00; }
+  h2.ar { direction:rtl; text-align:right; font-size:18px; margin:6px 0; line-height:1.6; }
+  h2.en { direction:ltr; text-align:left; font-size:16px; margin:6px 0; line-height:1.5; color:#243b5a; }
+  p.ar { direction:rtl; text-align:right; font-size:15px; line-height:1.9; margin:8px 0; }
+  p.en { direction:ltr; text-align:left; font-size:14px; line-height:1.7; margin:8px 0; color:#2a2f38; }
+  .link { margin-top:10px; font-size:13px; }
+  .link a { color:#0b63ce; text-decoration:none; font-weight:600; }
+  .footer { font-size:12px; color:#6b7280; line-height:1.8; margin-top:20px; }
+  @media print { body { background:#fff; } .card { border:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <h1>نشرة سوريا والمنطقة</h1>
+    <div class="en">Syria &amp; Region Daily Brief</div>
+    <div class="meta">{{ date }} · {{ generated }} · {{ count }} مادة</div>
+    <div class="meta">
+      {% if ai_used %}تم التلخيص آليًا مع رابط المصدر لكل مادة.{% else %}وضع الاحتياط: بعض الملخصات محدودة لأن خدمة التلخيص المجانية غير متاحة.{% endif %}
+    </div>
+  </div>
+
+  {% if count == 0 %}
+  <div class="card">
+    <p class="ar">لم يتم العثور على مواد كافية ضمن نافذة اليوم. يرجى التحقق من المصادر أو المحاولة لاحقًا.</p>
+    <p class="en">Not enough relevant items were found in today's window. Please check sources or try again later.</p>
+  </div>
+  {% endif %}
+
+  {% if politics %}
+  <div class="card">
+    <div class="section-title">سياسة وأمن ودبلوماسية · Politics, Security &amp; Diplomacy</div>
+    {% for i in politics %}
+    <div class="item">
+      <div class="source">{{ i.source }}{% if i.published %} · {{ i.published }}{% endif %}
+        {% for t in i.tags %}<span class="badge">{{ t }}</span>{% endfor %}
+        {% if i.limited %}<span class="badge limited">ملخص محدود / limited</span>{% endif %}
+      </div>
+      <h2 class="ar">{{ i.title_ar }}</h2>
+      <p class="ar">{{ i.summary_ar }}</p>
+      <h2 class="en">{{ i.title_en }}</h2>
+      <p class="en">{{ i.summary_en }}</p>
+      <div class="link"><a href="{{ i.link }}" target="_blank" rel="noopener">قراءة المقال الأصلي · Read the original article</a></div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if economy %}
+  <div class="card">
+    <div class="section-title">اقتصاد وأعمال وطاقة · Economy, Business &amp; Energy</div>
+    {% for i in economy %}
+    <div class="item">
+      <div class="source">{{ i.source }}{% if i.published %} · {{ i.published }}{% endif %}
+        {% for t in i.tags %}<span class="badge">{{ t }}</span>{% endfor %}
+        {% if i.limited %}<span class="badge limited">ملخص محدود / limited</span>{% endif %}
+      </div>
+      <h2 class="ar">{{ i.title_ar }}</h2>
+      <p class="ar">{{ i.summary_ar }}</p>
+      <h2 class="en">{{ i.title_en }}</h2>
+      <p class="en">{{ i.summary_en }}</p>
+      <div class="link"><a href="{{ i.link }}" target="_blank" rel="noopener">قراءة المقال الأصلي · Read the original article</a></div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    <p class="ar">هذه النشرة تلخيص آلي لمواد منشورة علنًا، ولا تعيد نشر المقال كاملًا ولا تتجاوز جدران الدفع. يرجى الرجوع إلى الرابط الأصلي للتفاصيل والسياق الكامل.</p>
+    <p class="en">This brief is an automated summary of publicly available material. It does not reproduce full articles or bypass paywalls. Please use the original links for full detail and context.</p>
+  </div>
+</div>
+</body>
+</html>

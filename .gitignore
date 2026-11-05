@@ -1,0 +1,8 @@
+.env
+out/
+__pycache__/
+*.pyc
+.venv/
+*.pdf
+*.html
+!templates/*.html

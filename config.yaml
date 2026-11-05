@@ -1,0 +1,117 @@
+# ============================================================
+# Syria & Region Daily Brief — configuration
+# Zero-cost design: free RSS + Google News RSS + Gemini free tier.
+# Edit sources here without touching code.
+# ============================================================
+
+settings:
+  timezone: "Asia/Dubai"
+  send_time_local: "07:00"          # informational; cron in workflow controls actual run
+  hours_window: 30                  # look back this many hours
+  max_items: 10                     # target items per issue (8–12 recommended)
+  min_items: 5
+  max_per_source: 2                 # avoid one outlet dominating
+  min_economy_items: 3              # try to include at least this many economy items
+  min_region_items: 2               # try to include at least this many non-Syria region items
+  request_timeout: 20
+  user_agent: "Mozilla/5.0 (compatible; SyriaRegionBrief/1.0; +https://github.com/)"
+  decode_google_links: true         # resolve Google News redirect -> original URL
+  fetch_article_text: true          # fetch full text when publicly available
+  article_text_chars: 2200          # cap per article sent to the model
+
+email:
+  subject_prefix: "نشرة سوريا والمنطقة | Syria & Region Brief"
+  from_name: "Syria & Region Brief"
+
+# ---- Keywords ------------------------------------------------
+keywords:
+  syria:
+    en: [syria, syrian, damascus, aleppo, idlib, homs, latakia, tartus, raqqa,
+         "deir ez-zor", hasakah, qamishli, assad, "al-sharaa", sharaa, hts,
+         "hayat tahrir", sdf, "syrian democratic", rojava, "north east syria"]
+    ar: [سوريا, سورية, دمشق, حلب, إدلب, حمص, اللاذقية, طرطوس, الرقة, "دير الزور",
+         الحسكة, القامشلي, الأسد, الشرع, "تحرير الشام", قسد, "الإدارة الذاتية",
+         "شمال شرق سوريا", درعا, السويداء]
+  region:
+    en: [lebanon, beirut, hezbollah, israel, israeli, gaza, palestine, palestinian,
+         "west bank", jerusalem, iran, tehran, iraq, baghdad, erbil, turkey, ankara,
+         erdogan, jordan, amman, egypt, cairo, gulf, saudi, riyadh, uae, dubai,
+         "abu dhabi", qatar, doha, kuwait, bahrain, oman, yemen, houthis, "red sea",
+         "middle east", mena, levant, gcc]
+    ar: [لبنان, بيروت, "حزب الله", إسرائيل, غزة, فلسطين, "الضفة الغربية", القدس,
+         إيران, طهران, العراق, بغداد, أربيل, تركيا, أنقرة, أردوغان, الأردن, عمّان,
+         مصر, القاهرة, الخليج, السعودية, الرياض, الإمارات, دبي, "أبو ظبي", قطر,
+         الدوحة, الكويت, البحرين, عُمان, اليمن, الحوثيون, "البحر الأحمر", "الشرق الأوسط"]
+  economy:
+    en: [economy, economic, oil, gas, energy, opec, trade, investment, sanctions,
+         reconstruction, "central bank", currency, pound, lira, inflation, gdp,
+         imf, "world bank", business, markets, stocks, bonds, wheat, agriculture,
+         ports, shipping, tourism, budget, debt, dollar, exports, imports]
+    ar: [اقتصاد, اقتصادي, نفط, غاز, طاقة, أوبك, تجارة, استثمار, عقوبات, "إعادة إعمار",
+         "مصرف مركزي", "البنك المركزي", عملة, ليرة, تضخم, "الناتج المحلي", "صندوق النقد",
+         "البنك الدولي", أعمال, أسواق, أسهم, سندات, قمح, زراعة, موانئ, شحن, سياحة,
+         موازنة, دين, دولار, صادرات, واردات, مصارف, مطار, طيران, "رحلات جوية", سياحة,
+         "مشاريع", "مشروع", "تأهيل", "إغاثة"]
+
+# ---- Sources -------------------------------------------------
+# type: rss  -> direct feed
+# type: gnews -> Google News RSS search (used when a site blocks direct RSS)
+# weight: higher = preferred when deduplicating / ranking
+sources:
+  # --- English / international ---
+  - {name: "BBC Middle East", lang: en, category: politics, type: rss, weight: 5,
+     url: "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml"}
+  - {name: "The Guardian — Middle East", lang: en, category: politics, type: rss, weight: 5,
+     url: "https://www.theguardian.com/world/middleeast/rss"}
+  - {name: "Al Jazeera English", lang: en, category: politics, type: rss, weight: 5,
+     url: "https://www.aljazeera.com/xml/rss/all.xml"}
+  - {name: "Middle East Eye", lang: en, category: politics, type: rss, weight: 4,
+     url: "https://www.middleeasteye.net/rss.xml"}
+  - {name: "Arab News", lang: en, category: politics, type: rss, weight: 4,
+     url: "https://www.arabnews.com/rss.xml"}
+  - {name: "Reuters", lang: en, category: politics, type: gnews, weight: 6,
+     query: 'site:reuters.com (Syria OR "Middle East" OR Lebanon OR Iraq OR Iran OR Israel OR Turkey OR Gulf) when:1d',
+     hl: en-US, gl: US, ceid: "US:en"}
+  - {name: "Associated Press", lang: en, category: politics, type: gnews, weight: 6,
+     query: 'site:apnews.com (Syria OR "Middle East" OR Lebanon OR Iraq OR Iran OR Israel OR Turkey) when:1d',
+     hl: en-US, gl: US, ceid: "US:en"}
+  - {name: "The New Arab", lang: en, category: politics, type: gnews, weight: 3,
+     query: 'site:newarab.com when:1d', hl: en-US, gl: US, ceid: "US:en"}
+  - {name: "Anadolu — English", lang: en, category: politics, type: gnews, weight: 3,
+     query: 'site:aa.com.tr/en (Syria OR "Middle East") when:1d', hl: en-US, gl: US, ceid: "US:en"}
+
+  # --- English / economy ---
+  - {name: "BBC Business", lang: en, category: economy, type: rss, weight: 4,
+     url: "https://feeds.bbci.co.uk/news/business/rss.xml"}
+  - {name: "The Guardian — Business", lang: en, category: economy, type: rss, weight: 4,
+     url: "https://www.theguardian.com/business/rss"}
+
+  # --- Arabic / general ---
+  - {name: "BBC عربي", lang: ar, category: politics, type: rss, weight: 5,
+     url: "https://feeds.bbci.co.uk/arabic/rss.xml"}
+  - {name: "الجزيرة", lang: ar, category: politics, type: rss, weight: 5,
+     url: "https://www.aljazeera.net/rss"}
+  - {name: "الشرق الأوسط", lang: ar, category: politics, type: rss, weight: 5,
+     url: "https://aawsat.com/feed"}
+  - {name: "العربية", lang: ar, category: politics, type: gnews, weight: 4,
+     query: 'site:alarabiya.net when:1d', hl: ar, gl: AE, ceid: "AE:ar"}
+  - {name: "الأناضول — عربي", lang: ar, category: politics, type: gnews, weight: 3,
+     query: 'site:aa.com.tr/ar when:1d', hl: ar, gl: AE, ceid: "AE:ar"}
+
+  # --- Arabic / economy ---
+  - {name: "CNBC عربية", lang: ar, category: economy, type: gnews, weight: 5,
+     query: 'site:cnbcarabia.com when:1d', hl: ar, gl: AE, ceid: "AE:ar"}
+  - {name: "الشرق للأعمال", lang: ar, category: economy, type: gnews, weight: 5,
+     query: 'site:asharqbusiness.com when:1d', hl: ar, gl: AE, ceid: "AE:ar"}
+  - {name: "أرقام", lang: ar, category: economy, type: gnews, weight: 4,
+     query: 'site:argaam.com when:1d', hl: ar, gl: SA, ceid: "SA:ar"}
+
+  # --- Syria specialist ---
+  - {name: "Syria Direct", lang: en, category: politics, type: rss, weight: 5,
+     url: "https://syriadirect.org/feed/"}
+  - {name: "عنب بلدي", lang: ar, category: politics, type: rss, weight: 5,
+     url: "https://www.enabbaladi.net/feed/"}
+  - {name: "North Press Agency", lang: en, category: politics, type: rss, weight: 4,
+     url: "https://npasyria.com/en/feed/"}
+  - {name: "تلفزيون سوريا", lang: ar, category: politics, type: rss, weight: 4,
+     url: "https://www.syria.tv/rss.xml"}

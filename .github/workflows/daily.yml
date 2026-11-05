@@ -1,0 +1,69 @@
+name: Daily Syria & Region Brief
+
+on:
+  schedule:
+    # 03:00 UTC = 07:00 Asia/Dubai (UTC+4). GitHub may delay a few minutes.
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Generate only, do not send email"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-brief
+  cancel-in-progress: false
+
+jobs:
+  brief:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install system libraries (PDF + Arabic fonts)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 \
+            fonts-noto-core fonts-noto-extra fonts-dejavu-core
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate and send digest
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          DIGEST_TO: ${{ secrets.DIGEST_TO }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            python src/main.py --dry-run
+          else
+            python src/main.py
+          fi
+
+      # Artifacts in a PUBLIC repo are publicly downloadable.
+      # Uncomment only if you are comfortable publishing each issue.
+      # - name: Upload issue (optional, public)
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: brief-${{ github.run_id }}
+      #     path: out/
+      #     retention-days: 14
