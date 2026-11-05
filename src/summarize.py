@@ -75,9 +75,19 @@ def gemini_summarize(articles: list[Article]) -> dict[str, dict] | None:
     if not api_key or env("NO_AI") == "1" or not articles:
         return None
 
-    model = env("GEMINI_MODEL", "gemini-2.5-flash")
+    # Gemini 2.5 Flash/Pro were deprecated on 2026-11-02 and are closed to NEW
+    # projects, so current free-tier Flash models must come first.
+    model = env("GEMINI_MODEL", "gemini-flash-latest")
     models = [model]
-    for fallback in ("gemini-flash-latest", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"):
+    for fallback in (
+        "gemini-flash-latest",
+        "gemini-3.8-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.6-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+    ):
         if fallback not in models:
             models.append(fallback)
 
@@ -111,7 +121,15 @@ def gemini_summarize(articles: list[Article]) -> dict[str, dict] | None:
                     time.sleep(15 * (attempt + 1))
                     continue
                 if resp.status_code in (404, 400):
-                    log.warning("Gemini model %s unavailable (%s); trying fallback", mdl, resp.status_code)
+                    detail = ""
+                    try:
+                        detail = resp.json().get("error", {}).get("message", "")[:200]
+                    except Exception:
+                        pass
+                    log.warning("Gemini model %s unavailable (%s): %s; trying fallback", mdl, resp.status_code, detail)
+                    if resp.status_code == 400 and ("API key" in detail or "API_KEY" in detail):
+                        log.error("Gemini API key rejected. Check the GEMINI_API_KEY secret.")
+                        return None
                     break
                 resp.raise_for_status()
                 data = resp.json()
