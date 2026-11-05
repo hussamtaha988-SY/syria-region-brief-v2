@@ -75,6 +75,10 @@ def main() -> int:
             decode_google_links(selected)
         log.info("Fetching public article text…")
         fetch_texts(selected, settings)
+        if settings.get("further_reading_enabled", True):
+            log.info("Finding free in-depth further reading…")
+            from further_reading import attach as attach_further
+            attach_further(selected, settings, int(settings.get("further_reading_per_item", 3)))
         log.info("Summarizing…")
         from summarize import summarize
         summaries, ai_used = summarize(selected)

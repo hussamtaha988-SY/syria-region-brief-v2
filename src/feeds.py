@@ -29,6 +29,7 @@ class Article:
     text: str = ""
     image: str = ""
     image_local: str = ""
+    further_reading: list = field(default_factory=list)
     score: float = 0.0
     tags: list[str] = field(default_factory=list)
     category: str = "politics"

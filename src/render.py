@@ -23,6 +23,7 @@ def build_items(articles: list[Article], summaries: dict[str, dict]) -> list[dic
             "link": a.link,
             "image": a.image,
             "image_local": a.image_local,
+            "further_reading": list(a.further_reading or []),
             "published": a.published.strftime("%Y-%m-%d %H:%M UTC") if a.published else "",
             "tags": a.tags,
             "category": s.get("category", a.category),

@@ -1,9 +1,8 @@
 name: Deep Dive
 
 on:
-  schedule:
-    # Check the mailbox every 15 minutes, 05:00-23:00 Dubai (01:00-19:00 UTC).
-    - cron: "*/15 1-19 * * *"
+  # Manual only. The newsletter now carries "more free in-depth reading"
+  # links under every item, so no mailbox polling is needed.
   workflow_dispatch:
     inputs:
       url:

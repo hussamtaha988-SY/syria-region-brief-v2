@@ -28,6 +28,13 @@
   .link a { color:#0b63ce; text-decoration:none; font-weight:600; }
   .deep { margin-top:8px; font-size:13px; }
   .deep a { display:inline-block; background:#0f2540; color:#ffffff !important; padding:7px 14px; border-radius:6px; text-decoration:none; font-weight:600; margin-left:6px; }
+  .more { margin-top:12px; background:#f7f9fc; border:1px solid #e3e8f0; border-radius:8px; padding:12px 14px; }
+  .more-title { font-size:13px; font-weight:700; color:#0f2540; margin-bottom:8px; direction:rtl; text-align:right; }
+  .more ol { margin:0; padding-right:20px; padding-left:20px; }
+  .more li { font-size:13px; line-height:1.8; margin-bottom:6px; }
+  .more a { color:#0b63ce; text-decoration:none; font-weight:600; }
+  .more .msrc { color:#5b6472; font-weight:400; }
+  .more .mlabel { display:inline-block; font-size:10px; padding:1px 7px; border-radius:999px; background:#e8eef8; color:#33415c; margin-right:4px; }
   .howto { background:#eef4ff; border:1px solid #cfe0ff; border-radius:10px; padding:14px 18px; margin-bottom:18px; font-size:13px; line-height:1.9; }
   .footer { font-size:12px; color:#6b7280; line-height:1.8; margin-top:20px; }
   @media print { body { background:#fff; } .card { border:none; } .deep { display:none; } }
@@ -44,10 +51,10 @@
     </div>
   </div>
 
-  {% if deep_dive and deep_dive.enabled and count > 0 %}
+  {% if count > 0 %}
   <div class="howto">
-    <strong>تريد التعمّق في خبر؟</strong> اضغط زر «تعمّق» تحت الخبر وأرسل الرسالة الجاهزة، ويصلك تقرير موسّع خلال دقائق.
-    <br><span dir="ltr">Want more depth? Tap “Deep dive” under any item and send the pre-filled email.</span>
+    <strong>للتوسّع:</strong> تحت كل خبر تجد قائمة «قراءات إضافية معمّقة» — مقالات وتحليلات مجانية من مصادر أخرى عن الموضوع نفسه، مع رابط مباشر لكل منها.
+    <br><span dir="ltr">Below each item: free in-depth articles and analysis about the same story, from other outlets.</span>
   </div>
   {% endif %}
 
@@ -73,8 +80,19 @@
       <h2 class="en">{{ i.title_en }}</h2>
       <p class="en">{{ i.summary_en }}</p>
       <div class="link"><a href="{{ i.link }}" target="_blank" rel="noopener">قراءة المقال الأصلي · Read the original article</a></div>
-      {% if deep_dive and deep_dive.enabled and i.deep_mailto %}
-      <div class="deep"><a href="{{ i.deep_mailto }}">تعمّق في هذا الخبر · Deep dive</a></div>
+      {% if i.further_reading %}
+      <div class="more">
+        <div class="more-title">قراءات إضافية معمّقة ومجانية · More free in-depth reading</div>
+        <ol>
+          {% for r in i.further_reading %}
+          <li{% if r.lang == 'ar' %} dir="rtl"{% else %} dir="ltr"{% endif %}>
+            <span class="mlabel">{{ r.label }}</span>
+            <a href="{{ r.link }}" target="_blank" rel="noopener">{{ r.title }}</a>
+            <span class="msrc"> — {{ r.source }}</span>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
       {% endif %}
     </div>
   {% endmacro %}
