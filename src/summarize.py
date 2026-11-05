@@ -81,7 +81,11 @@ def gemini_summarize(articles: list[Article]) -> dict[str, dict] | None:
         if fallback not in models:
             models.append(fallback)
 
-    prompt = PROMPT_TEMPLATE.format(articles_json=json.dumps(_payload(articles), ensure_ascii=False))
+    # NOTE: use replace(), not str.format(): the template contains literal JSON
+    # braces ({"items":[...]}) which str.format() would treat as placeholders.
+    prompt = PROMPT_TEMPLATE.replace(
+        "{articles_json}", json.dumps(_payload(articles), ensure_ascii=False)
+    )
     body = {
         "systemInstruction": {"parts": [{"text": SYSTEM}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
@@ -155,7 +159,12 @@ def fallback_summaries(articles: list[Article]) -> dict[str, dict]:
 
 
 def summarize(articles: list[Article]) -> tuple[dict[str, dict], bool]:
-    ai = gemini_summarize(articles)
+    try:
+        ai = gemini_summarize(articles)
+    except Exception as e:
+        # Never let an AI-side problem abort the whole issue.
+        log.warning("Gemini step failed (%s); using fallback summaries.", e)
+        ai = None
     if ai:
         # Fill any missing items with fallback.
         fb = fallback_summaries(articles)
