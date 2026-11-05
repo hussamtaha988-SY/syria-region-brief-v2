@@ -27,8 +27,23 @@ CONCEPT_MAP = {
     "landmine": ["landmine", "mine", "لغم", "الغام"], "girl": ["girl", "فتاة", "طفلة"],
     "economic": ["economic", "economy", "اقتصاد", "اقتصادي"], "companies": ["companies", "شركات"],
     "meeting": ["meeting", "meet", "بحث", "لقاء", "اجتماع"],
+    "saudi": ["saudi", "السعودية", "السعودي", "السعوديه"],
+    "riyadh": ["riyadh", "الرياض"],
+    "mbs": ["bin salman", "mohammed bin", "mohamed bin", "بن سلمان"],
+    "agreement": ["agreement", "agreements", "deal", "pact", "اتفاقية", "اتفاقيات", "مذكرات"],
+    "loan": ["loan", "loans", "fund for development", "قروض", "قرض", "الصندوق السعودي"],
+    "defence": ["defense", "defence", "military", "دفاع", "عسكري", "عسكرية"],
+    "visit": ["visit", "visits", "زيارة", "يزور"],
+    "citizenship": ["citizenship", "nationality", "الجنسية", "جنسية"],
+    "emirates_airline": ["emirates airline", "طيران الإمارات"],
+    "houthi": ["houthi", "houthis", "الحوثي", "الحوثيون", "الحوثيين"],
+    "hezbollah_denial": ["hezbollah denies", "حزب الله ينفي", "ينفي"],
 }
 GENERIC_CONCEPTS = {"syria", "region", "economic", "president", "meeting", "killed"}
+# An event is usually identified by WHO + WHERE (+ WHAT).
+ACTORS = {"sharaa", "mbs", "hezbollah", "houthi", "emirates_airline"}
+PLACES = {"riyadh", "saudi", "homs", "aleppo", "idlib", "damascus", "beirut", "gaza", "iraq", "turkey", "iran"}
+ACTIONS = {"agreement", "loan", "defence", "visit", "plot", "blast", "arrest", "investment", "citizenship", "refinery"}
 
 
 def concept_set(text: str) -> set[str]:
@@ -127,8 +142,11 @@ def dedupe(articles: list[Article]) -> list[Article]:
                 break
             b_specific = b_concepts - GENERIC_CONCEPTS
             shared = specific & b_specific
-            # Same event if several specific cross-lingual concepts overlap.
-            if len(shared) >= 3 and (shared & {"refinery", "plot", "landmine", "investment", "blast"}):
+            # Same event when WHO + WHERE match, or when many specifics overlap.
+            same_actor = bool(shared & ACTORS)
+            same_place = bool(shared & PLACES)
+            same_action = bool(shared & ACTIONS)
+            if (same_actor and same_place) or (same_actor and same_action) or len(shared) >= 3:
                 dup = True
                 break
         if dup:

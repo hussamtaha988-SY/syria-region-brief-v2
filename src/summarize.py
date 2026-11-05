@@ -77,15 +77,17 @@ def gemini_summarize(articles: list[Article]) -> dict[str, dict] | None:
 
     # Gemini 2.5 Flash/Pro were deprecated on 2026-11-02 and are closed to NEW
     # projects, so current free-tier Flash models must come first.
-    model = env("GEMINI_MODEL", "gemini-flash-latest")
+    model = env("GEMINI_MODEL", "gemini-3.1-flash-lite")
     models = [model]
+    # gemini-3.1-flash-lite is first: it is free-tier and was the model that
+    # actually answered on this project, while the bigger Flash models returned
+    # 503 (overloaded) and wasted ~5 minutes of retries.
     for fallback in (
+        "gemini-3.1-flash-lite",
+        "gemini-3.5-flash-lite",
         "gemini-flash-latest",
         "gemini-3.8-flash",
-        "gemini-3.5-flash-lite",
         "gemini-3.6-flash",
-        "gemini-3.1-flash-lite",
-        "gemini-2.5-flash",
         "gemini-2.5-flash-lite",
     ):
         if fallback not in models:
@@ -145,7 +147,9 @@ def gemini_summarize(articles: list[Article]) -> dict[str, dict] | None:
                     return result
             except Exception as e:
                 log.warning("Gemini error on %s attempt %d: %s", mdl, attempt + 1, e)
-                time.sleep(5)
+                if "503" in str(e) or "500" in str(e):
+                    break  # model overloaded -> try the next model immediately
+                time.sleep(3)
     return None
 
 
